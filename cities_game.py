@@ -95,23 +95,27 @@ class CitiesSerializer:
                 longitude=float(city['coords']['lon']),
                 is_used=False
             )
-            self.cities.add(city_obj)
+            self.cities.add(city_obj.name.lower())
     
     def get_all_cities(self) -> set:
         """
         Метод, возвращающий сет всех городов
         :return: сет параметров name объектов класса City
         """
-        city_names = set()
-        for city in self.cities:
-            city_names.add(city.name.lower())
-        return city_names
+        # city_names = set()
+        # for city in self.cities:
+        #     city_names.add(city.name.lower())
+        return self.cities
     
 class CityGame:
+     
+    iter = 0
 
     def __init__(self, cities: CitiesSerializer)-> None:
-        self.cities = cities
+        # self.cities = cities
+        self.cities_set = self.get_all_cities()
         self.bad_letters = self.make_bad_letter_set()
+        
 
     def start_game(self)-> None:
         """
@@ -121,64 +125,90 @@ class CityGame:
         letter = input("Введите первую букву: ")
         while letter in self.bad_letters:
             letter = input("Введите первую букву: ")
-        self.computer_turn(letter)
-        self.human_turn(letter)
-
+        self.game_loop(letter)
+        
     def human_turn(self, letter: str)-> str:
+        self.iter += 1
         user_input = input("Введите город: ")
         if self.check_game_over(user_input, letter):
             letter = user_input[-2] if user_input[-1] in self.bad_letters else user_input[-1]
-            self.cities.get_all_cities().remove(user_input.lower())
-            self.computer_turn(letter)
+            self.city_set.remove(user_input.lower())
+    
 
     def computer_turn(self, letter: str)-> str:
-        for city in self.cities.get_all_cities():
+
+        self.iter += 1
+        for city in self.cities_set:
             if city[0].lower() == letter.lower():
                 
                 letter = city[-2] if city[-1] in self.bad_letters else city[-1]
-                print(f"Компьютер выбрал город {city.name}. Вам на {letter}")
+                print(f"Компьютер выбрал город {city}. Вам на {letter}")
                 self.cities.get_all_cities().remove(city)
-
+                return letter
                 
             else:
                 print("Нет городов на эту букву. Компьютер проиграл.")
                 break
-        self.human_turn(letter)
+        
 
     def check_game_over(self, user_input: str, letter: str) -> bool:
         if user_input[0].lower() != letter.lower():
             print("Город начинается не на ту букву. Вы проиграли.")
             return False
-        elif user_input.lower() not in self.cities.get_all_cities():
+        elif user_input.lower() not in self.city_set():
             print("Такого города нет или он уже использован. Вы проиграли.")
             return False
         else:
             return True
 
-    def save_game_state(self):
-        pass
+    def game_loop(self, letter: str)-> None:
+        while True:
+            letter = self.computer_turn(letter)
+            if not letter:
+                break
+            letter = self.human_turn(letter)
+            if not letter:
+                break
 
     def make_bad_letter_set(self)-> set:
         bad_letters = set()
         alphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
 
         for letter in alphabet:
-            for city in self.cities.get_all_cities():
+            found = False
+            for city in self.cities_set:
                 first_letter = city[0]
                 if letter.lower() == first_letter.lower():
-                    pass
-                else:
-                    bad_letters.add(letter)
+                    found = True
+                    break
+            if not found:
+                bad_letters.add(letter)
         return bad_letters
 
 
 class GameManager(JsonFile, CitiesSerializer, CityGame):
 
-    def __call__():
-        pass
+    def __init__(self, file_path: str = "cities.json")-> None:
+        JsonFile.__init__(self, file_path)
+        self.cities_data = self.read_data()
+        CitiesSerializer.__init__(self, self.cities_data)
+        CityGame.__init__(self, self)
+        
+
+
+    def __call__(self, file_path: str = "cities.json") -> None:
+        self.run_game()
 
     def run_game(self):
-        pass
+        self.start_game()
+        self.display_game_result()
 
-    def display_game_result():
-        pass
+    def display_game_result(self)-> None:
+        print(f"Игра закончена на {self.iter} ходу.")
+
+def main():
+    game = GameManager("cities.json")
+    game()  # или game.run_game()
+
+if __name__ == "__main__":
+    main()
