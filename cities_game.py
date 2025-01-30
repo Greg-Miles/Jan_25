@@ -132,8 +132,10 @@ class CityGame:
         user_input = input("Введите город: ")
         if self.check_game_over(user_input, letter):
             letter = user_input[-2] if user_input[-1] in self.bad_letters else user_input[-1]
-            self.city_set.remove(user_input.lower())
-    
+            self.cities_set.remove(user_input.lower())
+
+            return letter
+        return ""    
 
     def computer_turn(self, letter: str)-> str:
 
@@ -143,19 +145,19 @@ class CityGame:
                 
                 letter = city[-2] if city[-1] in self.bad_letters else city[-1]
                 print(f"Компьютер выбрал город {city}. Вам на {letter}")
-                self.cities.get_all_cities().remove(city)
+                self.cities_set.remove(city)
                 return letter
                 
-            else:
-                print("Нет городов на эту букву. Компьютер проиграл.")
-                break
+        
+        print("Нет городов на эту букву. Компьютер проиграл.")
+        return ""
         
 
     def check_game_over(self, user_input: str, letter: str) -> bool:
         if user_input[0].lower() != letter.lower():
             print("Город начинается не на ту букву. Вы проиграли.")
             return False
-        elif user_input.lower() not in self.city_set():
+        elif user_input.lower() not in self.cities_set:
             print("Такого города нет или он уже использован. Вы проиграли.")
             return False
         else:
@@ -171,18 +173,16 @@ class CityGame:
                 break
 
     def make_bad_letter_set(self)-> set:
-        bad_letters = set()
+        
         alphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+        bad_letters = set(alphabet)
 
-        for letter in alphabet:
-            found = False
-            for city in self.cities_set:
-                first_letter = city[0]
-                if letter.lower() == first_letter.lower():
-                    found = True
-                    break
-            if not found:
-                bad_letters.add(letter)
+        for city in self.cities_set:
+            if city[0].lower() in bad_letters:
+                bad_letters.remove(city[0].lower())
+        print(f"Недопустимые буквы: {bad_letters}")
+        # print(len(bad_letters))
+        # print(len(alphabet))
         return bad_letters
 
 
