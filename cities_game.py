@@ -30,6 +30,9 @@ from dataclasses import dataclass
 
 
 class JsonFile:
+    """
+    Класс для работы с JSON файлами
+    """
 
     def __init__(self, file_path: str)-> None:
         """
@@ -79,9 +82,12 @@ class City:
     is_used: bool = False
 
 class CitiesSerializer:
+    """
+    Класс для сериализации списка городов, полученного из JSON файла, в множество строк (названий городов).
+    """
     def __init__(self, city_data: list[dict]) -> None:
         """
-        Конструктор класса CitiesSerializer. Преобразует список словарей в сет объектов класса City
+        Конструктор класса CitiesSerializer. Преобразует список словарей в сет строк (названий городов) и сохраняет их в атрибут класса.
         :param city_data: список словарей с данными о городах
         """
         self.cities = set()
@@ -102,32 +108,47 @@ class CitiesSerializer:
         Метод, возвращающий сет всех городов
         :return: сет параметров name объектов класса City
         """
-        # city_names = set()
-        # for city in self.cities:
-        #     city_names.add(city.name.lower())
         return self.cities
     
 class CityGame:
-     
-    iter = 0
-
-    def __init__(self, cities: CitiesSerializer)-> None:
-        # self.cities = cities
+    """
+    Класс, управляющий логикой игры.
+    """
+    def __init__(self)-> None:
+        """
+        Конструктор класса CityGame
+        :param alphabet: строка с алфавитом
+        :param cities_set: сет имён городов
+        :param bad_letters: сет букв, с которых не начинаются города
+        :param iter: счётчик ходов
+        """
+        self.alphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
         self.cities_set = self.get_all_cities()
         self.bad_letters = self.make_bad_letter_set()
+        self.iter = 0
         
 
     def start_game(self)-> None:
         """
-        Метод для запуска игры
+        Метод для запуска игры. Реализует ввод и проверку первой буквы и запускает игровой цикл.
         """
 
-        letter = input("Введите первую букву: ")
-        while letter in self.bad_letters:
-            letter = input("Введите первую букву: ")
-        self.game_loop(letter)
+        letter = input("Добро пожаловать в игру Города. Введите первую букву: ")
+        if letter.lower() in self.alphabet:
+
+            while letter in self.bad_letters:
+                letter = input("Нет городов на эту букву! Введите первую букву: ")
+            self.game_loop(letter)
+        else:
+            print("Некорректный ввод. Введите букву.")
+            self.start_game()
         
     def human_turn(self, letter: str)-> str:
+        """
+        Метод для обработки хода игрока. Проверяет ввод игрока на корректность и возвращает букву, с которой должен начинаться следующий город.
+        :param letter: буква, с которой начинается город
+        :return letter: буква, с которой должен начинаться следующий городА
+        """
         self.iter += 1
         user_input = input("Введите город: ")
         if self.check_game_over(user_input, letter):
@@ -138,13 +159,17 @@ class CityGame:
         return ""    
 
     def computer_turn(self, letter: str)-> str:
-
+        """
+        Метод для обработки хода компьютера. Выбирает случайный город из списка городов, начинающийся на букву, которой кончается город игрока или для первого хода - букву которую ввёл игрок.
+        :param letter: буква, с которой начинается город
+        :return letter: буква, с которой должен начинаться следующий город
+        """
         self.iter += 1
         for city in self.cities_set:
             if city[0].lower() == letter.lower():
                 
                 letter = city[-2] if city[-1] in self.bad_letters else city[-1]
-                print(f"Компьютер выбрал город {city}. Вам на {letter}")
+                print(f"Компьютер выбрал город {city.capitalize()}. Вам на {letter}")
                 self.cities_set.remove(city)
                 return letter
                 
@@ -154,6 +179,12 @@ class CityGame:
         
 
     def check_game_over(self, user_input: str, letter: str) -> bool:
+        """
+        Метод проверки корректности хода игрока. Проверяет, что введённый город начинается на букву, которой кончается предыдущий город и что город ещё не был использован.
+        :param user_input: введённый игроком город
+        :param letter: буква, с которой начинается город
+        :return: True, если ход корректен, и False в противном случае
+        """
         if user_input[0].lower() != letter.lower():
             print("Город начинается не на ту букву. Вы проиграли.")
             return False
@@ -164,6 +195,11 @@ class CityGame:
             return True
 
     def game_loop(self, letter: str)-> None:
+        """
+        Метод, реализующий игровой цикл. Вызывает методы для хода игрока и компьютера, пока кто-либо не проиграет.
+        :param letter: буква, с которой начинается город
+        """
+
         while True:
             letter = self.computer_turn(letter)
             if not letter:
@@ -173,9 +209,12 @@ class CityGame:
                 break
 
     def make_bad_letter_set(self)-> set:
+        """
+        Метод, создающий сет недопустимых букв.
+        :return bad_letters: сет недопустимых букв
+        """
         
-        alphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
-        bad_letters = set(alphabet)
+        bad_letters = set(self.alphabet)
 
         for city in self.cities_set:
             if city[0].lower() in bad_letters:
@@ -187,23 +226,34 @@ class CityGame:
 
 
 class GameManager(JsonFile, CitiesSerializer, CityGame):
+    """
+    Фасад для управления игрой. Дочерний класс от JsonFile, CitiesSerializer и CityGame.
+    """
 
     def __init__(self, file_path: str = "cities.json")-> None:
+        """
+        Конструктор класса GameManager. Связывает классы JsonFile, CitiesSerializer и CityGame.
+        :param file_path: путь к файлу с городами, по умолчанию cities.json
+        """
+
         JsonFile.__init__(self, file_path)
         self.cities_data = self.read_data()
         CitiesSerializer.__init__(self, self.cities_data)
-        CityGame.__init__(self, self)
+        CityGame.__init__(self)
         
 
 
-    def __call__(self, file_path: str = "cities.json") -> None:
-        self.run_game()
-
-    def run_game(self):
+    def __call__(self) -> None:
+        """
+        Дандер метод для запуска игры. Вызывает методы для запуска игры и вывода результата.
+        """
         self.start_game()
         self.display_game_result()
 
     def display_game_result(self)-> None:
+        """
+        Метод для вывода результата игры. Выводит количество ходов, которое потребовалось для победы.
+        """
         print(f"Игра закончена на {self.iter} ходу.")
 
 def main():
